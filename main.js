@@ -1,9 +1,10 @@
-// Modify the following 6 values with your own information, open the ICBC road test appointment website https://onlinebusiness.icbc.com/webdeas-ui/home
+// Modify the following 6 variables with your own information, open the ICBC road test appointment website https://onlinebusiness.icbc.com/webdeas-ui/home
 // Then press the F12 key to open the debugger and switch to the Console tab. Copy the entire code below and paste it into the Console tab, then press Enter to execute it.
 // If there are no errors, the code will execute once every 2 minutes. When a matching date range for available test slots is found, a sound reminder will play (please adjust your computer's volume).
+// Make sure the current page of the browser is not minimized. It is recommended to set the computer not to automatically lock the screen.
 
 const drvrLastName = 'li'; // Driver's last name
-const licenceNumber = '099000000'; // Driver's license number
+const licenceNumber = '09900000'; // Driver's license number
 const keyword = 'wong'; // Typically the mother's last name
 const officeName = 'Kingsway' // Test center name, such as Kingsway, Richmond claim centre, can be found in the "By office" dropdown menu on the appointment page
 const startDate = '2024-11-20' // Earliest date
@@ -62,15 +63,15 @@ async function actionSearch() {
         document.querySelector('button[type="submit"]').click(); // Log in
         await delay(5000);
         if (document.body.innerText.includes('Sign in')) {
+			clearInterval(timerId);
             console.error(getDate(), 'Failed to login, script stopped');
-            clearInterval(timerId)
             return
         }
         document.getElementById('search-location').querySelectorAll('div[role="tab"]')[1].click() // Click the 【By office】 tab
         // Simulate sending an event to get the test center list
         input = document.querySelector('input[formcontrolname="officeControl"]');
         input.focus();
-        input.value = 'vanvouver';
+        input.value = 'vancouver';
         input.dispatchEvent(new Event('input', {
                 bubbles: true
             }));
@@ -82,14 +83,14 @@ async function actionSearch() {
                 bubbles: true,
                 cancelable: true
             }));
-        await delay(3000);
+        await delay(5000);
         const options = document.querySelectorAll('mat-option');
         if (options.length == 0) {
-            console.error(getDate(), 'Appointment list is empty, script stopped')
-            clearInterval(timerId)
+            clearInterval(timerId);
+			console.error(getDate(), 'No office found, script stopped');
             return
         }
-        // Iterate through each option, looking for the test center
+        // Iterate through each option, looking for the office
         let found = false;
         options.forEach(option => {
             const optionText = option.querySelector('.mat-option-text');
@@ -99,8 +100,8 @@ async function actionSearch() {
             }
         });
         if (!found) {
-            console.error(getDate(), 'No road test center found with name containing [' + officeName + '], script stopped')
-            clearInterval(timerId)
+			clearInterval(timerId);
+            console.error(getDate(), 'No office found with name containing [' + officeName + '], script stopped')
             return
         }
     } else {
@@ -114,10 +115,12 @@ async function actionSearch() {
     }
     const list = document.getElementsByClassName('appointment-listings');
     if (list.length == 0) {
-        console.warn(getDate(), 'List lost, logging out of the system')
+		console.warn(getDate(), 'Appointments not found, the session may have expired')
         const signOut = document.getElementsByClassName("sign-out-button");
-        if (signOut.length > 0)
+        if (signOut.length > 0) {
+			console.info(getDate(), 'Logout of the system')
             signOut[0].click();
+		}
         return;
     }
     let found = false;
@@ -125,7 +128,7 @@ async function actionSearch() {
     dates.forEach(date => {
         if (isDateInRange(date.innerText)) {
             found = true;
-            console.wan(getDate(), 'Available date: ' + date.innerText)
+            console.warn(getDate(), 'Available date: ' + date.innerText)
         }
     });
     if (found) {
