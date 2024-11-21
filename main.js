@@ -1,7 +1,7 @@
 // Modify the following 6 variables with your own information, open the ICBC road test appointment website https://onlinebusiness.icbc.com/webdeas-ui/home
 // Then press the F12 key to open the debugger and switch to the Console tab. Copy the entire code below and paste it into the Console tab, then press Enter to execute it.
 // If there are no errors, the code will execute once every 2 minutes. When a matching date range for available test slots is found, a sound reminder will play (please adjust your computer's volume).
-// Make sure the current page of the browser is not minimized. It is recommended to set the computer not to automatically lock the screen.
+// Make sure the current page of the browser is not minimized and the screen does not automatically lock.
 
 const drvrLastName = 'li'; // Driver's last name
 const licenceNumber = '09900000'; // Driver's license number
@@ -36,16 +36,29 @@ function isDateInRange(dateStr) {
     return date >= rangeStart && date <= rangeEnd;
 }
 
+function playAudio() {
+	const audio = new Audio('https://www.soundjay.com/phone/telephone-ring-03a.wav');
+	audio.play();
+}
+
 let timerId = 0;
 async function actionSearch() {
     const searchForm = document.forms['searchForm'];
     if (!searchForm) {
-        // No search button, need to log in
-        let nextButton = document.querySelector('button.primary');
-        nextButton.click();
+        // No search button, need to sign in
+        document.querySelector('button.primary').click();
         await delay(3000);
-        console.info(getDate(), 'Logging into the system')
+		let nextButton = document.querySelector('button.primary');
+		if (nextButton.innerText == 'Next') {
+			nextButton.click();
+			await delay(3000);
+		}
         let input = document.querySelector('input[formcontrolname="drvrLastName"]');
+		if (!input) {
+			console.warn(getDate(), 'Not in sign in page');
+			return;
+		}
+		console.info(getDate(), 'Sign in the system')
         input.value = drvrLastName;
         input.dispatchEvent(new Event('input'));
         input = document.querySelector('input[formcontrolname="licenceNumber"]');
@@ -60,14 +73,15 @@ async function actionSearch() {
         if (!isChecked) {
             checkbox.click();
         }
-        document.querySelector('button[type="submit"]').click(); // Log in
-        await delay(5000);
+        document.querySelector('button[type="submit"]').click();
+        await delay(3000);
         if (document.body.innerText.includes('Sign in')) {
 			clearInterval(timerId);
-            console.error(getDate(), 'Failed to login, script stopped');
+            console.error(getDate(), 'Failed to sign in, script stopped');
             return
         }
         document.getElementById('search-location').querySelectorAll('div[role="tab"]')[1].click() // Click the 【By office】 tab
+		await delay(1000);
         // Simulate sending an event to get the test center list
         input = document.querySelector('input[formcontrolname="officeControl"]');
         input.focus();
@@ -83,11 +97,12 @@ async function actionSearch() {
                 bubbles: true,
                 cancelable: true
             }));
-        await delay(5000);
+        await delay(3000);
         const options = document.querySelectorAll('mat-option');
         if (options.length == 0) {
             clearInterval(timerId);
-			console.error(getDate(), 'No office found, script stopped');
+			console.error(getDate(), 'No office found, the screen may locked, script stopped')
+			playAudio();
             return
         }
         // Iterate through each option, looking for the office
@@ -118,7 +133,7 @@ async function actionSearch() {
 		console.warn(getDate(), 'Appointments not found, the session may have expired')
         const signOut = document.getElementsByClassName("sign-out-button");
         if (signOut.length > 0) {
-			console.info(getDate(), 'Logout of the system')
+			console.info(getDate(), 'Sign out of the system')
             signOut[0].click();
 		}
         return;
@@ -131,11 +146,14 @@ async function actionSearch() {
             console.warn(getDate(), 'Available date: ' + date.innerText)
         }
     });
+	const cancelButton = document.getElementsByClassName("back-button");
+	if (cancelButton.length > 0) {
+		cancelButton[0].click();
+	}
     if (found) {
-        const audio = new Audio('https://www.soundjay.com/phone/telephone-ring-03a.wav'); // Play sound when a match is found
-        audio.play();
+        playAudio();
     } else {
-        console.log(getDate(), 'No matching date')
+        console.info(getDate(), 'No matching date')
     }
 }
 actionSearch();
