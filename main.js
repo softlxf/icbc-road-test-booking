@@ -229,6 +229,7 @@ async function signInPage() {
                 lastName = drvrLastNameInput.value;
                 licenceNumber = licenceNumberInput.value;
                 keyword = keywordInput.value;
+                actionSearch();
             });
             console.error('Please sign in system or set lastName, licenceNumber, keyword variables to continue');
             return false;
